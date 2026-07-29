@@ -1,20 +1,98 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# MyAI Vault
 
-# Run and deploy your AI Studio app
+An AI-powered Digital Identity System developed for the **MemoryVerse AI '26 Hackathon**.
 
-This contains everything you need to run your app locally.
+## 📌 About the Project
 
-View your app in AI Studio: https://ai.studio/apps/7983bc7c-0334-4969-9292-1616878a3c21
+MyAI Vault is a smart platform that helps students organize and manage their academic and professional documents in one place.
 
-## Run Locally
+Instead of simply storing files, the system uses AI to understand uploaded documents, categorize them, connect related information, and make retrieval quick and easy.
 
-**Prerequisites:**  Node.js
+## ✨ Features
 
+- Upload academic and professional documents
+- Automatic document categorization
+- AI-powered document understanding
+- Smart search functionality
+- Digital journey timeline
+- User-friendly dashboard
+- Responsive design
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🛠️ Tech Stack
+
+### Frontend
+- React
+- Vite
+- Tailwind CSS
+
+### Backend
+- FastAPI (Planned)
+
+### AI Technologies
+- NLP
+- OCR
+- Embeddings
+- Semantic Search
+- Vector Database (Planned)
+
+## 📂 Project Structure
+
+```
+myai-vault/
+├── public/
+├── src/
+├── package.json
+├── vite.config.js
+└── README.md
+```
+
+## 🚀 Getting Started
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/myai-vault.git
+```
+
+### Navigate to the Project
+
+```bash
+cd myai-vault
+```
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Run the Project
+
+```bash
+npm run dev
+```
+
+The application will run at:
+
+```
+http://localhost:5173
+```
+
+## 🎯 Future Enhancements
+
+- AI Chat Assistant
+- Knowledge Graph
+- Career Insights
+- Resume Analyzer
+- Vector Database Integration
+- RAG-based Semantic Search
+
+## 👩‍💻 Developed By
+
+**Mahisa S**
+
+AI & Data Science Student
+
+## 🏆 Hackathon
+
+Built for **MemoryVerse AI '26**.
