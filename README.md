@@ -8,6 +8,10 @@ MyAI Vault is a smart platform that helps students organize and manage their aca
 
 Instead of simply storing files, the system uses AI to understand uploaded documents, categorize them, connect related information, and make retrieval quick and easy.
 
+## Live Deployment Link
+
+https://myai-vault.onrender.com/
+
 ## ✨ Features
 
 - Upload academic and professional documents
