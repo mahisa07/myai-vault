@@ -10,7 +10,7 @@ An AI-powered Digital Identity System developed for the **MemoryVerse AI '26 Hac
 
 ## 🏗 AI Architecture Diagram
 
-![MyAI Vault Architecture](./myai-vault-photo.jpeg)
+![MyAI Vault Architecture](./myai-vault-architecture.jpeg)
 
 ## 📌 About the Project
 
