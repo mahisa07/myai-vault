@@ -2,16 +2,15 @@
 
 An AI-powered Digital Identity System developed for the **MemoryVerse AI '26 Hackathon**.
 
-## 📄 Project Documents
+# 📄 Project Documents
 
 ## 📄 Thought Process Sheet
 
-[📘 View Thought Process Sheet](docs/MyAI_Vault_Thought_Process_Sheet.pdf)
+[📘 View Thought Process Sheet](./MyAI_Vault_Thought_Process_Sheet.pdf)
 
 ## 🏗 AI Architecture Diagram
 
-![MyAI Vault Architecture](docs/myai-vault-photo.jpeg)
-
+![MyAI Vault Architecture](./myai-vault-architecture.jpeg)
 
 ## 📌 About the Project
 
