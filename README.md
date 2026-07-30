@@ -2,6 +2,12 @@
 
 An AI-powered Digital Identity System developed for the **MemoryVerse AI '26 Hackathon**.
 
+## 📄 Project Documents
+
+- 📘 Thought Process Sheet: `MyAI_Vault_Thought_Process_Sheet.pdf`
+- 🏗 AI Architecture Diagram: `myai-vault photo.jpeg`
+
+
 ## 📌 About the Project
 
 MyAI Vault is a smart platform that helps students organize and manage their academic and professional documents in one place.
