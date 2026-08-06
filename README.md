@@ -107,6 +107,3 @@ http://localhost:5173
 
 AI & Data Science Student
 
-## 🏆 Hackathon
-
-Built for **MemoryVerse AI '26**.
