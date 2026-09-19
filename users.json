@@ -1,0 +1,18 @@
+[
+  {
+    "id": "usr_1789737165484",
+    "name": "Mahisa",
+    "email": "mahisiva1507@gmail.com",
+    "passwordHash": "5172928f8c1ecaf52c465a11449ad50ae0c834d139ccebc88f98367e4aecb93c4289fbb492f398f17941544fb53b5f7cf9037b2d484978bb66bc009ab98fb6c6",
+    "salt": "5aed5bb61e268850821b9b0f2311ed8517e644ef75f2a05b8ef5fcd821a44a1f",
+    "title": "Student / Professional",
+    "university": "",
+    "degree": "",
+    "graduationYear": "",
+    "targetRole": "",
+    "avatarUrl": "",
+    "bio": "",
+    "skills": [],
+    "createdAt": "2026-09-18T13:12:45.484Z"
+  }
+]

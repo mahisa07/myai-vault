@@ -10,6 +10,7 @@ import {
   File,
 } from 'lucide-react';
 import { DocumentCategory, DocumentItem } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   onClose,
   onUploadSuccess,
 }) => {
+  const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('Certificates');
   const [organization, setOrganization] = useState('');
@@ -126,43 +128,43 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#0B1F3A] border border-sky-500/30 rounded-2xl w-full max-w-xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-xl p-6 sm:p-8 text-[#2F3437] shadow-xl relative overflow-hidden">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg bg-white/5 transition-colors"
+          className="absolute top-4 right-4 text-[#8A9095] hover:text-[#2F3437] p-2 rounded-lg bg-[#F7F3EA] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Title */}
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
+          <div className="p-3 rounded-xl bg-[#EAF0EC] border border-[#6F8F72]/30 text-[#0F4C4C]">
             <Upload className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Upload to MyAI Vault</h2>
-            <p className="text-xs text-slate-400">PDF, DOCX, Images, or ZIP • AI Pipeline Processing</p>
+            <h2 className="text-xl font-bold text-[#2F3437]">{t('upload.title')}</h2>
+            <p className="text-xs text-[#5A6065]">{t('upload.file_types')}</p>
           </div>
         </div>
 
         {/* Pipeline Progress View */}
         {uploadStep > 0 ? (
           <div className="py-8 space-y-6 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center mx-auto border border-sky-500/40 animate-pulse">
+            <div className="w-16 h-16 rounded-2xl bg-[#EAF0EC] text-[#0F4C4C] flex items-center justify-center mx-auto border border-[#6F8F72]/40 animate-pulse">
               <Bot className="w-8 h-8" />
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-[#2F3437]">
                 {uploadStep === 1
-                  ? '1. OCR & Text Extraction...'
+                  ? t('upload.step1')
                   : uploadStep === 2
-                  ? '2. NLP Skill Tagging & Vector Embeddings...'
-                  : '3. Identity Vault Indexing Complete!'}
+                  ? t('upload.step2')
+                  : t('upload.step3')}
               </h3>
-              <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                Gemini AI is parsing document text, mapping knowledge links, and updating your ATS career profile.
+              <p className="text-xs text-[#5A6065] max-w-sm mx-auto">
+                {t('upload.processing')}
               </p>
             </div>
 
@@ -170,25 +172,25 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             <div className="flex items-center justify-center space-x-4 pt-2 text-xs">
               <div
                 className={`flex items-center space-x-1 ${
-                  uploadStep >= 1 ? 'text-sky-400 font-bold' : 'text-slate-600'
+                  uploadStep >= 1 ? 'text-[#0F4C4C] font-bold' : 'text-[#8A9095]'
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>OCR</span>
               </div>
-              <span className="text-slate-700">→</span>
+              <span className="text-[#8A9095]">→</span>
               <div
                 className={`flex items-center space-x-1 ${
-                  uploadStep >= 2 ? 'text-sky-400 font-bold' : 'text-slate-600'
+                  uploadStep >= 2 ? 'text-[#0F4C4C] font-bold' : 'text-[#8A9095]'
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Embeddings</span>
               </div>
-              <span className="text-slate-700">→</span>
+              <span className="text-[#8A9095]">→</span>
               <div
                 className={`flex items-center space-x-1 ${
-                  uploadStep >= 3 ? 'text-emerald-400 font-bold' : 'text-slate-600'
+                  uploadStep >= 3 ? 'text-[#6F8F72] font-bold' : 'text-[#8A9095]'
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
@@ -202,7 +204,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             <div
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleFileDrop}
-              className="p-6 rounded-2xl bg-slate-900/80 border-2 border-dashed border-sky-500/30 hover:border-sky-400 transition-colors text-center space-y-2 relative"
+              className="p-6 rounded-2xl bg-[#F7F3EA] border-2 border-dashed border-[#0F4C4C]/30 hover:border-[#0F4C4C] transition-colors text-center space-y-2 relative"
             >
               <input
                 type="file"
@@ -210,38 +212,38 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 onChange={handleFileChange}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
-              <Upload className="w-8 h-8 text-sky-400 mx-auto" />
-              <div className="text-xs font-semibold text-white">
+              <Upload className="w-8 h-8 text-[#0F4C4C] mx-auto" />
+              <div className="text-xs font-semibold text-[#2F3437]">
                 {fileName ? (
-                  <span className="text-sky-300 font-mono">Selected: {fileName}</span>
+                  <span className="text-[#0F4C4C] font-mono">Selected: {fileName}</span>
                 ) : (
-                  <span>Drag & Drop PDF, DOCX, Image, or ZIP here</span>
+                  <span>{t('upload.drag_drop')}</span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-400">or click to browse files from your computer</p>
+              <p className="text-[10px] text-[#5A6065]">{t('upload.file_types')}</p>
             </div>
 
-            {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">{error}</div>}
+            {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs">{error}</div>}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Document Title *</label>
+                <label className="block text-[#5A6065] font-medium mb-1">Document Title *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Stanford Deep Learning Certificate"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-sky-400"
+                  className="w-full bg-[#F7F3EA] border border-[#E5E0D8] rounded-xl px-3.5 py-2 text-xs text-[#2F3437] focus:outline-none focus:border-[#0F4C4C]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Category</label>
+                <label className="block text-[#5A6065] font-medium mb-1">{t('docs.table_cat')}</label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as DocumentCategory)}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-sky-400"
+                  className="w-full bg-[#F7F3EA] border border-[#E5E0D8] rounded-xl px-3.5 py-2 text-xs text-[#2F3437] focus:outline-none focus:border-[#0F4C4C]"
                 >
                   {categories.map((c) => (
                     <option key={c} value={c}>
@@ -252,18 +254,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-slate-300 font-medium mb-1">Issuing Organization / Institution</label>
+                <label className="block text-[#5A6065] font-medium mb-1">{t('docs.table_org')}</label>
                 <input
                   type="text"
                   placeholder="e.g. Stanford Online, Goldman Sachs, AWS"
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-sky-400"
+                  className="w-full bg-[#F7F3EA] border border-[#E5E0D8] rounded-xl px-3.5 py-2 text-xs text-[#2F3437] focus:outline-none focus:border-[#0F4C4C]"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-slate-300 font-medium mb-1">
+                <label className="block text-[#5A6065] font-medium mb-1">
                   Optional Key Excerpt / Text Content
                 </label>
                 <textarea
@@ -271,24 +273,24 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   placeholder="Paste certificate or project text excerpt for AI processing..."
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-400"
+                  className="w-full bg-[#F7F3EA] border border-[#E5E0D8] rounded-xl p-3 text-xs text-[#2F3437] focus:outline-none focus:border-[#0F4C4C]"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-3 border-t border-white/10">
+            <div className="flex justify-end space-x-3 pt-3 border-t border-[#E5E0D8]">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl text-slate-300 hover:text-white text-xs font-medium"
+                className="px-4 py-2.5 rounded-xl text-[#5A6065] hover:text-[#2F3437] text-xs font-medium"
               >
-                Cancel
+                {t('upload.close')}
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold text-xs shadow-lg shadow-sky-500/20"
+                className="px-6 py-2.5 rounded-xl bg-[#0F4C4C] hover:bg-[#145959] text-white font-semibold text-xs shadow-xs"
               >
-                Run AI Pipeline & Index
+                {t('header.upload_btn')}
               </button>
             </div>
           </form>
