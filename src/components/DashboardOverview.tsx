@@ -53,6 +53,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 }) => {
   const { t } = useLanguage();
 
+  const displayName = user.name || (user.email ? user.email.split('@')[0] : 'User');
+  const atsDisplay = typeof insights?.atsScore === 'number' && !isNaN(insights.atsScore) ? `${insights.atsScore}/100` : 'N/A';
+  const atsPercentDisplay = typeof insights?.atsScore === 'number' && !isNaN(insights.atsScore) ? `${insights.atsScore}%` : 'N/A';
+
   // Compute metric stats
   const totalDocs = documents.length;
   const certCount = documents.filter((d) => d.category === 'Certificates').length;
@@ -110,7 +114,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2F3437]">
-              {t('dash.welcome', 'Welcome back')}, {user.name}!
+              {t('dash.welcome', 'Welcome back')}, {displayName}!
             </h1>
             <p className="text-[#5A6065] text-xs sm:text-sm max-w-xl">
               {t('dash.target_role', 'Target Role')}: <span className="text-[#0F4C4C] font-semibold">{user.targetRole || 'AI Candidate'}</span>{user.university && user.university !== 'Stanford University' ? ` • ${user.university}` : ''}
@@ -145,7 +149,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           { label: t('docs.projects', 'Projects'), value: projCount, icon: <Code className="w-4 h-4 text-[#0F4C4C]" /> },
           { label: t('dash.unique_skills', 'Extracted Skills'), value: allSkills.length, icon: <GraduationCap className="w-4 h-4 text-[#6F8F72]" /> },
           { label: t('docs.internships', 'Internships'), value: internCount, icon: <Briefcase className="w-4 h-4 text-[#5A6065]" /> },
-          { label: t('dash.ats_score', 'ATS Resume Score'), value: `${insights.atsScore}/100`, icon: <TrendingUp className="w-4 h-4 text-[#0F4C4C]" /> },
+          { label: t('dash.ats_score', 'ATS Resume Score'), value: atsDisplay, icon: <TrendingUp className="w-4 h-4 text-[#0F4C4C]" /> },
         ].map((card, idx) => (
           <div
             key={idx}
@@ -247,7 +251,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 AI Career Insight
               </span>
               <span className="text-[10px] bg-[#EAF0EC] text-[#577359] px-2 py-0.5 rounded font-mono font-semibold">
-                ATS Score: {insights.atsScore}%
+                ATS Score: {atsPercentDisplay}
               </span>
             </div>
             <h4 className="text-base font-bold text-[#2F3437] mb-1">

@@ -49,7 +49,9 @@ export const CareerInsightsView: React.FC<CareerInsightsViewProps> = ({
       verifiedSkillsMap.set(s.name, s.sourceCount);
     });
   } else if (evidenceClaims.length > 0 || documents.length > 0) {
-    const verifiedClaims = evidenceClaims.filter((c) => c.status === 'VERIFIED');
+    const verifiedClaims = evidenceClaims.filter(
+      (c) => c.status === 'VERIFIED' && (!c.category || c.category === 'Skills')
+    );
     verifiedClaims.forEach((c) => {
       const cnt = c.evidenceSources ? Math.max(1, c.evidenceSources.length) : 1;
       verifiedSkillsMap.set(c.claim, (verifiedSkillsMap.get(c.claim) || 0) + cnt);
@@ -74,7 +76,11 @@ export const CareerInsightsView: React.FC<CareerInsightsViewProps> = ({
     insights?.skillGap?.needsReviewSkills && insights.skillGap.needsReviewSkills.length > 0
       ? insights.skillGap.needsReviewSkills
       : evidenceClaims
-          .filter((c) => c.status === 'NEEDS_REVIEW' || c.status === 'SELF_REPORTED')
+          .filter(
+            (c) =>
+              (c.status === 'NEEDS_REVIEW' || c.status === 'SELF_REPORTED') &&
+              (!c.category || c.category === 'Skills')
+          )
           .map((c) => ({
             name: c.claim,
             reason: c.evidenceDetails || 'Self-reported claim pending user verification.',
@@ -86,7 +92,9 @@ export const CareerInsightsView: React.FC<CareerInsightsViewProps> = ({
       : insights?.missingSkills && insights.missingSkills.length > 0
       ? insights.missingSkills.map((m) => ({ name: m.name, reason: m.reason }))
       : evidenceClaims
-          .filter((c) => c.status === 'UNSUPPORTED')
+          .filter(
+            (c) => c.status === 'UNSUPPORTED' && (!c.category || c.category === 'Skills')
+          )
           .map((c) => ({
             name: c.claim,
             reason: 'No supporting document evidence found in vault.',

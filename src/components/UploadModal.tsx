@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Upload,
@@ -9,19 +9,21 @@ import {
   AlertCircle,
   File,
 } from 'lucide-react';
-import { DocumentCategory, DocumentItem } from '../types';
+import { DocumentCategory, DocumentItem, UserProfile } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess: (doc: DocumentItem) => void;
+  user?: UserProfile;
 }
 
 export const UploadModal: React.FC<UploadModalProps> = ({
   isOpen,
   onClose,
   onUploadSuccess,
+  user,
 }) => {
   const { t } = useLanguage();
   const [title, setTitle] = useState('');
@@ -32,6 +34,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [fileType, setFileType] = useState<'pdf' | 'docx' | 'image' | 'zip'>('pdf');
   const [uploadStep, setUploadStep] = useState<number>(0); // 0: Form, 1: Uploading/OCR, 2: NLP/Embeddings, 3: Complete
   const [error, setError] = useState('');
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
+
+  const clearAllTimers = () => {
+    timersRef.current.forEach((t) => clearTimeout(t));
+    timersRef.current = [];
+  };
+
+  useEffect(() => {
+    return () => {
+      clearAllTimers();
+    };
+  }, []);
+
+  const handleClose = () => {
+    clearAllTimers();
+    setUploadStep(0);
+    setError('');
+    setSelectedFile(null);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -51,6 +76,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
+      setSelectedFile(file);
       setFileName(file.name);
       if (!title) {
         const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
@@ -67,6 +93,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      setSelectedFile(file);
       setFileName(file.name);
       if (!title) {
         const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
@@ -75,54 +102,81 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   };
 
+  const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string) || '');
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (uploadStep > 0) return; // Submission re-entry guard
     if (!title) {
       setError('Document title is required');
       return;
     }
 
     setError('');
-    setUploadStep(1); // Step 1: OCR Extraction
+    setUploadStep(1); // Step 1: Text & file processing
 
     try {
-      setTimeout(async () => {
-        setUploadStep(2); // Step 2: NLP & Embeddings
+      let extractedContent = rawText;
+      let contentBase64 = '';
 
-        setTimeout(async () => {
-          const res = await fetch('/api/documents/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title,
-              fileName: fileName || `${title.replace(/\s+/g, '_')}.${fileType}`,
-              fileType,
-              category,
-              organization: organization || 'Stanford University',
-              rawText:
-                rawText ||
-                `Document Title: ${title}. Category: ${category}. Organization: ${organization}. Contains verified achievement metrics and key technical skill competencies.`,
-            }),
-          });
+      if (selectedFile) {
+        contentBase64 = await readFileAsBase64(selectedFile);
+        if (!extractedContent && (selectedFile.type.startsWith('text/') || selectedFile.name.endsWith('.txt') || selectedFile.name.endsWith('.md'))) {
+          try {
+            extractedContent = await selectedFile.text();
+          } catch (e) {}
+        }
+      }
 
-          const data = await res.json();
-          setUploadStep(3); // Complete
+      setUploadStep(2); // Step 2: Gemini NLP & indexing
+      const token = localStorage.getItem('myai_vault_token');
 
-          setTimeout(() => {
-            if (data.document) {
-              onUploadSuccess(data.document);
-            }
-            onClose();
-            setUploadStep(0);
-            setTitle('');
-            setOrganization('');
-            setRawText('');
-            setFileName('');
-          }, 1000);
-        }, 1200);
-      }, 1000);
+      const res = await fetch('/api/documents/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          title,
+          fileName: fileName || selectedFile?.name || `${title.replace(/\s+/g, '_')}.${fileType}`,
+          fileType,
+          category,
+          organization: organization || (user?.university !== 'Stanford University' ? user?.university : '') || '',
+          rawText: extractedContent || '',
+          contentBase64,
+          email: user?.email,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.document) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      setUploadStep(3); // Complete
+      onUploadSuccess(data.document);
+
+      // Reset form state cleanly after completion
+      setTimeout(() => {
+        setUploadStep(0);
+        setTitle('');
+        setOrganization('');
+        setRawText('');
+        setFileName('');
+        setSelectedFile(null);
+        onClose();
+      }, 500);
     } catch (err: any) {
-      setError(err?.message || 'Upload failed');
+      setError(err?.message || 'Upload failed. Please check backend connection.');
       setUploadStep(0);
     }
   };
@@ -131,7 +185,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-xl p-6 sm:p-8 text-[#2F3437] shadow-xl relative overflow-hidden">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-[#8A9095] hover:text-[#2F3437] p-2 rounded-lg bg-[#F7F3EA] transition-colors"
         >
           <X className="w-5 h-5" />

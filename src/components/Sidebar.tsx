@@ -52,6 +52,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onCloseMobile();
   };
 
+  const displayName = user.name || (user.email ? user.email.split('@')[0] : 'User');
+  const initials = displayName ? displayName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -123,10 +126,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-4 border-t border-[#E5E0D8] bg-[#F7F3EA]/60">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-xl bg-[#0F4C4C] text-white flex items-center justify-center font-bold text-xs shadow-xs ring-2 ring-[#0F4C4C]/20">
-              {user.name ? user.name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
+              {initials}
             </div>
             <div className="overflow-hidden">
-              <div className="text-xs font-bold text-[#2F3437] truncate">{user.name || 'mahisiva1507'}</div>
+              <div className="text-xs font-bold text-[#2F3437] truncate">{displayName}</div>
               {user.university && user.university !== 'Stanford University' ? (
                 <div className="text-[10px] text-[#6F8F72] font-mono font-semibold truncate">{user.university}</div>
               ) : null}

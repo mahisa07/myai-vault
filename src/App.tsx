@@ -55,7 +55,19 @@ export default function App() {
 
   const [unauthView, setUnauthView] = useState<'landing' | 'login'>('login');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [user, setUser] = useState<UserProfile>(initialUserProfile);
+  const [user, setUser] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem('myai_vault_user');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.university === 'Stanford University') parsed.university = '';
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    return initialUserProfile;
+  });
 
   const [documents, setDocuments] = useState<DocumentItem[]>(initialDocuments);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEventItem[]>(initialTimelineEvents);
@@ -133,6 +145,7 @@ export default function App() {
     setUser(cleanUser);
     localStorage.removeItem('myai_vault_logged_out');
     localStorage.setItem('myai_vault_authenticated', 'true');
+    localStorage.setItem('myai_vault_user', JSON.stringify(cleanUser));
     setIsAuthenticated(true);
     setActiveTab('dashboard');
   };
@@ -149,6 +162,7 @@ export default function App() {
     localStorage.removeItem('myai_vault_authenticated');
     localStorage.removeItem('myai_vault_session');
     localStorage.removeItem('myai_vault_token');
+    localStorage.removeItem('myai_vault_user');
     
     setIsAuthenticated(false);
     setUser(initialUserProfile);

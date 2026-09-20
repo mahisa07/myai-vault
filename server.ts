@@ -586,15 +586,15 @@ async function startServer() {
         return res.status(400).json({ error: 'Title and fileName are required' });
       }
 
-      const docId = 'doc_' + Date.now();
+      const isBinaryPdf = rawText && (rawText.startsWith('%PDF') || rawText.includes('PDF-1.'));
       const extractedTextSample =
-        rawText ||
+        (!isBinaryPdf && rawText ? rawText : '') ||
         `Document Title: ${title}. Category: ${category || 'General'}. Issued by: ${organization || 'Institution'}. Details: Verified credential and technical milestone in Computer Science, Software Engineering, and AI Systems.`;
 
       let summary = `Verified document titled "${title}" related to ${category || 'academic/professional'} achievements.`;
       let skills: string[] = ['Python', 'Problem Solving', 'Data Analysis'];
       let detectedCategory: DocumentCategory = (category as DocumentCategory) || 'Certificates';
-      let detectedOrg = organization || 'Stanford University';
+      let detectedOrg = organization || '';
       let issueDate = new Date().toISOString().split('T')[0];
 
       // Call Gemini for real AI parsing & classification if available
@@ -605,7 +605,7 @@ async function startServer() {
 Document Title: ${title}
 File Name: ${fileName}
 Category Hint: ${category || 'Unknown'}
-Raw Text / Excerpt: ${extractedTextSample}
+${extractedTextSample ? `Raw Text / Excerpt: ${extractedTextSample}` : ''}
 
 Provide a JSON output with the following fields:
 1. "summary": A concise 2-3 sentence AI summary of what this document proves.
@@ -615,9 +615,24 @@ Provide a JSON output with the following fields:
 5. "issueDate": Date formatted as YYYY-MM-DD or estimated year.
 `;
 
+          const contentsPayload: any[] = [prompt];
+          if (contentBase64) {
+            const cleanBase64 = contentBase64.replace(/^data:[^;]+;base64,/, '');
+            let mime = 'application/pdf';
+            if (fileType === 'image' || fileName.match(/\.(png|jpg|jpeg)$/i)) {
+              mime = fileName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+            }
+            contentsPayload.push({
+              inlineData: {
+                mimeType: mime,
+                data: cleanBase64,
+              },
+            });
+          }
+
           const aiRes = await ai.models.generateContent({
             model: 'gemini-3.6-flash',
-            contents: prompt,
+            contents: contentsPayload,
             config: {
               responseMimeType: 'application/json',
             },
