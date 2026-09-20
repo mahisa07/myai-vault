@@ -149,7 +149,8 @@ function getDocsForUser(email?: string): DocumentItem[] {
 }
 
 function getClaimsForUser(email?: string): CareerClaim[] {
-  const key = (email || userProfile.email || 'default').toLowerCase();
+  if (!email || !email.trim()) return [];
+  const key = email.toLowerCase().trim();
   if (!userClaimsMap.has(key)) {
     userClaimsMap.set(key, []);
   }
@@ -157,7 +158,8 @@ function getClaimsForUser(email?: string): CareerClaim[] {
 }
 
 function rebuildEvidenceClaims(email?: string): CareerClaim[] {
-  const key = (email || userProfile.email || 'default').toLowerCase();
+  if (!email || !email.trim()) return [];
+  const key = email.toLowerCase().trim();
   const docs = getDocsForUser(email);
   const existingClaims = userClaimsMap.get(key) || [];
 
@@ -292,7 +294,8 @@ function isSampleTimelineEvent(ev: TimelineEventItem): boolean {
 }
 
 function getTimelineForUser(email?: string): TimelineEventItem[] {
-  const key = (email || userProfile.email || 'default').toLowerCase();
+  if (!email || !email.trim()) return [];
+  const key = email.toLowerCase().trim();
   if (!userTimelineMap.has(key)) {
     userTimelineMap.set(key, []);
   }
@@ -329,11 +332,16 @@ async function startServer() {
 
   // Helper to sync graph & timeline when docs change
   function rebuildGraphAndTimeline(email?: string) {
+    if (!email || !email.trim()) return;
+    const key = email.toLowerCase().trim();
     const docs = getDocsForUser(email);
-    // Refresh skills on profile
     const allSkillsSet = new Set<string>();
     docs.forEach((doc) => doc.skills.forEach((s) => allSkillsSet.add(s)));
-    userProfile.skills = Array.from(allSkillsSet);
+    if (usersMap.has(key)) {
+      const userRec = usersMap.get(key)!;
+      userRec.skills = Array.from(allSkillsSet);
+      saveUsersMap();
+    }
     rebuildEvidenceClaims(email);
   }
 
@@ -543,14 +551,26 @@ async function startServer() {
     }
   });
 
+  function getRequestEmail(req: express.Request): string {
+    const authUser = getAuthenticatedUser(req);
+    if (authUser && authUser.email) {
+      return authUser.email.toLowerCase().trim();
+    }
+    const emailVal = (req.body && req.body.email) || (req.query && req.query.email);
+    if (emailVal && typeof emailVal === 'string' && emailVal.trim()) {
+      return emailVal.toLowerCase().trim();
+    }
+    return '';
+  }
+
   // Documents API
   app.get('/api/documents', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     res.json({ documents: getDocsForUser(reqEmail) });
   });
 
   app.get('/api/documents/:id', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const docs = getDocsForUser(reqEmail);
     const doc = docs.find((d) => d.id === req.params.id);
     if (!doc) {
@@ -561,7 +581,7 @@ async function startServer() {
 
   app.delete('/api/documents/:id', (req, res) => {
     const docId = req.params.id;
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const key = (reqEmail || 'default').toLowerCase();
     
     const docs = getDocsForUser(reqEmail).filter((d) => d.id !== docId);
@@ -578,13 +598,18 @@ async function startServer() {
   app.post('/api/documents/upload', async (req, res) => {
     try {
       const { title, fileName, fileType, category, organization, rawText, contentBase64, email } = req.body;
-      const reqEmail = email || userProfile.email;
+      const reqEmail = getRequestEmail(req);
+      if (!reqEmail) {
+        return res.status(400).json({ error: 'User email or authentication token is required for upload.' });
+      }
       const userDocs = getDocsForUser(reqEmail);
       const userTimeline = getTimelineForUser(reqEmail);
 
       if (!title || !fileName) {
         return res.status(400).json({ error: 'Title and fileName are required' });
       }
+
+      const docId = 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
       const isBinaryPdf = rawText && (rawText.startsWith('%PDF') || rawText.includes('PDF-1.'));
       const extractedTextSample =
@@ -694,8 +719,8 @@ Provide a JSON output with the following fields:
 
   // Semantic Search API
   app.post('/api/search', async (req, res) => {
-    const { query, email } = req.body;
-    const reqEmail = email || userProfile.email;
+    const { query } = req.body;
+    const reqEmail = getRequestEmail(req);
     const userDocs = getDocsForUser(reqEmail);
 
     if (!query) {
@@ -732,13 +757,13 @@ Provide a JSON output with the following fields:
 
   // Timeline API
   app.get('/api/timeline', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     res.json({ timeline: getTimelineForUser(reqEmail) });
   });
 
   // Evidence Vault Claims API
   app.get('/api/evidence/claims', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const claims = rebuildEvidenceClaims(reqEmail);
     const totalSources = Array.from(new Set(claims.flatMap((c) => c.evidenceSources.map((s) => s.documentId)))).length;
     const verifiedCount = claims.filter((c) => c.status === 'VERIFIED').length;
@@ -758,8 +783,8 @@ Provide a JSON output with the following fields:
   });
 
   app.post('/api/evidence/claims', (req, res) => {
-    const { claim, category, status, evidenceDetails, email } = req.body;
-    const reqEmail = email || userProfile.email;
+    const { claim, category, status, evidenceDetails } = req.body;
+    const reqEmail = getRequestEmail(req);
     const key = (reqEmail || 'default').toLowerCase();
     const userClaims = getClaimsForUser(reqEmail);
 
@@ -787,7 +812,7 @@ Provide a JSON output with the following fields:
   });
 
   app.put('/api/evidence/claims/:id', (req, res) => {
-    const reqEmail = (req.query.email as string) || req.body.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const userClaims = getClaimsForUser(reqEmail);
     const claim = userClaims.find((c) => c.id === req.params.id);
 
@@ -800,7 +825,7 @@ Provide a JSON output with the following fields:
   });
 
   app.delete('/api/evidence/claims/:id', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const key = (reqEmail || 'default').toLowerCase();
     const userClaims = getClaimsForUser(reqEmail).filter((c) => c.id !== req.params.id);
     userClaimsMap.set(key, userClaims);
@@ -808,14 +833,14 @@ Provide a JSON output with the following fields:
   });
 
   app.post('/api/evidence/reprocess', (req, res) => {
-    const reqEmail = req.body?.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const claims = rebuildEvidenceClaims(reqEmail);
     res.json({ success: true, claims });
   });
 
   // Resume & Portfolio Helper Functions
   function getResumesForUser(email?: string): ResumeDocument[] {
-    const key = (email || userProfile.email || 'default').toLowerCase();
+    const key = (email || 'default').toLowerCase();
     if (!userResumesMap.has(key)) {
       userResumesMap.set(key, []);
     }
@@ -823,7 +848,7 @@ Provide a JSON output with the following fields:
   }
 
   function getPortfoliosForUser(email?: string): PortfolioDocument[] {
-    const key = (email || userProfile.email || 'default').toLowerCase();
+    const key = (email || 'default').toLowerCase();
     if (!userPortfoliosMap.has(key)) {
       userPortfoliosMap.set(key, []);
     }
@@ -990,19 +1015,19 @@ Provide a JSON output with the following fields:
 
   // Resume REST APIs
   app.get('/api/resumes', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     res.json({ resumes: getResumesForUser(reqEmail) });
   });
 
   app.post('/api/resumes/generate', (req, res) => {
-    const reqEmail = req.body?.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const template = req.body?.template || 'professional';
     const resume = generateResumeData(reqEmail, template);
     res.json({ success: true, resume });
   });
 
   app.put('/api/resumes/:id', (req, res) => {
-    const reqEmail = (req.query.email as string) || req.body.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const userResumes = getResumesForUser(reqEmail);
     const resume = userResumes.find((r) => r.id === req.params.id);
     if (!resume) return res.status(404).json({ error: 'Resume not found' });
@@ -1011,7 +1036,7 @@ Provide a JSON output with the following fields:
   });
 
   app.delete('/api/resumes/:id', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const key = (reqEmail || 'default').toLowerCase();
     const userResumes = getResumesForUser(reqEmail).filter((r) => r.id !== req.params.id);
     userResumesMap.set(key, userResumes);
@@ -1020,19 +1045,19 @@ Provide a JSON output with the following fields:
 
   // Portfolio REST APIs
   app.get('/api/portfolios', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     res.json({ portfolios: getPortfoliosForUser(reqEmail) });
   });
 
   app.post('/api/portfolios/generate', (req, res) => {
-    const reqEmail = req.body?.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const template = req.body?.template || 'clean';
     const portfolio = generatePortfolioData(reqEmail, template);
     res.json({ success: true, portfolio });
   });
 
   app.put('/api/portfolios/:id', (req, res) => {
-    const reqEmail = (req.query.email as string) || req.body.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const userPortfolios = getPortfoliosForUser(reqEmail);
     const portfolio = userPortfolios.find((p) => p.id === req.params.id);
     if (!portfolio) return res.status(404).json({ error: 'Portfolio not found' });
@@ -1041,7 +1066,7 @@ Provide a JSON output with the following fields:
   });
 
   app.delete('/api/portfolios/:id', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const key = (reqEmail || 'default').toLowerCase();
     const userPortfolios = getPortfoliosForUser(reqEmail).filter((p) => p.id !== req.params.id);
     userPortfoliosMap.set(key, userPortfolios);
@@ -1051,7 +1076,7 @@ Provide a JSON output with the following fields:
   function computeCareerInsights(email?: string): CareerInsightsData {
     const key = (email || 'default').toLowerCase();
     const userRec = usersMap.get(key);
-    const targetRole = userRec?.targetRole || userProfile.targetRole || 'Software Engineer';
+    const targetRole = userRec?.targetRole || 'Software Engineer';
 
     const docs = getDocsForUser(email);
     const claims = rebuildEvidenceClaims(email);
@@ -1158,13 +1183,13 @@ Provide a JSON output with the following fields:
 
   // Career Insights API
   app.get('/api/insights', (req, res) => {
-    const reqEmail = (req.query.email as string) || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     res.json({ insights: computeCareerInsights(reqEmail) });
   });
 
   // Regenerate Career Insights
   app.post('/api/insights/generate', async (req, res) => {
-    const reqEmail = req.body?.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const computed = computeCareerInsights(reqEmail);
     res.json({ insights: computed });
   });
@@ -1306,12 +1331,11 @@ INSTRUCTIONS & RULES:
 
   // Reset sample data API
   app.post('/api/reset-sample-data', (req, res) => {
-    const reqEmail = req.body?.email || userProfile.email;
+    const reqEmail = getRequestEmail(req);
     const key = (reqEmail || 'default').toLowerCase();
     userDocsMap.set(key, []);
     userTimelineMap.set(key, []);
-    careerInsights = JSON.parse(JSON.stringify(initialCareerInsights));
-    userProfile = { ...initialUserProfile };
+    userClaimsMap.set(key, []);
     res.json({ success: true, message: 'Vault reset to initial empty state' });
   });
 
